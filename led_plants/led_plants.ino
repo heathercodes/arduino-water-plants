@@ -1,8 +1,5 @@
 #include <FrequencyTimer2.h>
 
-// update from SAnwandter
-// all credit to https://create.arduino.cc/projecthub/SAnwandter1/programming-8x8-led-matrix-23475a
-
 #define ROW_1 2
 #define ROW_2 3
 #define ROW_3 4
@@ -30,16 +27,22 @@ const byte col[] = {
 
 // The display buffer
 byte HEART[] = { B11111111,B10011001,B00000000,B00000000,B00000000,B10000001,B11000011,B11100111};
-
+byte CONFUSED[] = { B11111111,B11000011,B10111101,B11111101,B11100011,B11101111,B11111111,B11101111};
 byte W[] = {B00000000,B10000010,B10010010,B01010100,B01010100,B00101000,B00000000,B00000000};
 byte A[] = {B00000000,B00111100,B01100110,B01100110,B01111110,B01100110,B01100110,B01100110};
 byte T[] = {B00000000,B01111100,B00010000,B00010000,B00010000,B00010000,B00010000,B00000000};
 byte E[] = {B00000000,B00111100,B00100000,B00111000,B00100000,B00100000,B00111100,B00000000};
 byte R[] = {B00000000,B00111000,B00100100,B00100100,B00111000,B00100100,B00100100,B00000000};
 byte M[] = {B00000000,B00000000,B01000100,B10101010,B10010010,B10000010,B10000010,B00000000};
-byte E[] = {B00000000,B00111100,B00100000,B00111000,B00100000,B00100000,B00111100,B00000000};
+byte ALL[] = {B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111};
 
 float timeCount = 0;
+
+// plant sensor
+int sensorPin = A0;
+int led = 13;
+int thresholdUp = 400; // TODO what is a threshold for succulent?
+int thresholdDown = 250;
 
 void setup() 
 {
@@ -57,7 +60,7 @@ void setup()
     pinMode(A3, OUTPUT);
 }
 
- void  drawScreen(byte buffer2[])
+void drawScreen(byte buffer2[])
  { 
    // Turn on each row in series
     for (byte i = 0; i < 8; i++)        // count next row
@@ -68,7 +71,7 @@ void setup()
           // if You set (~buffer2[i] >> a) then You will have positive
           digitalWrite(col[a], (buffer2[i] >> a) & 0x01); // initiate whole column
           
-          delayMicroseconds(100);       // uncoment deley for diferent speed of display
+          delayMicroseconds(100);       // uncoment delay for diferent speed of display
           //delayMicroseconds(1000);
           //delay(10);
           //delay(100);
@@ -80,16 +83,57 @@ void setup()
     }
 }
 
+void warning() {
+  delay(5);
+  timeCount += 1;
+
+  if(timeCount <  20) {
+    drawScreen(W);
+  } else if (timeCount <  40) {
+    drawScreen(A);
+  } else if (timeCount <  60) {
+    drawScreen(T);
+  } else if (timeCount <  80) {
+    drawScreen(E);
+  } else if (timeCount <  100) {
+    drawScreen(R);
+  } else if (timeCount <  120) {
+    drawScreen(R);
+  } else if (timeCount <  140) {
+    drawScreen(M);
+  } else if (timeCount <  160) {
+    drawScreen(E);
+  } else if (timeCount <  180) {
+    drawScreen(ALL);
+  } else {
+    // back to the start
+    timeCount = 0;
+  }
+}
+
 // initiate the drawing
 void loop() {
-  // This could be rewritten to not use a delay, which would make it appear brighter
 delay(5);
 timeCount += 1;
 
-if(timeCount) {
-  drawScreen(HEART);
- } else {
-// back to the start
-timeCount = 0;
- }
+int sensorValue;
+  String DisplayWords;
+  
+  sensorValue = analogRead(sensorPin);
+  
+  Serial.println(sensorValue);
+  
+  if (sensorValue <= thresholdDown){
+      
+      warning();
+  
+  } else if (sensorValue >= thresholdUp){ 
+      
+      drawScreen(HEART);
+  
+  } else {
+      
+      drawScreen(CONFUSED);
+  
+  }
 }
